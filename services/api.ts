@@ -1,9 +1,9 @@
 import { User } from '../types';
 
-const API_URL = 'http://localhost:3001/api';
+// 支援環境變數設定，若無則預設為本地端 3001 port
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 // Helper to handle fetch with timeout
-// If backend doesn't respond in 1000ms, we assume it's offline and fallback immediately.
 const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout = 1000) => {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
@@ -17,7 +17,6 @@ const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout 
   }
 };
 
-// Helper to simulate network delay for better UX in offline mode
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const createUser = async (name: string, avatar: string, grade: string, gender: string): Promise<User> => {
@@ -26,22 +25,15 @@ export const createUser = async (name: string, avatar: string, grade: string, ge
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, avatar, grade, gender }),
-    }, 1500); // 1.5s timeout for login
+    }, 1500);
     
     if (!res.ok) throw new Error('Failed to create user');
     return res.json();
   } catch (error) {
     console.warn("Backend unreachable or timed out, falling back to LocalStorage mode.", error);
     
-    // Mock Local Storage Implementation
     const users: User[] = JSON.parse(localStorage.getItem('sel_users') || '[]');
-    const newUser: User = {
-      id: Date.now(), // Generate a pseudo-unique ID
-      name,
-      avatar,
-      grade,
-      gender
-    };
+    const newUser: User = { id: Date.now(), name, avatar, grade, gender };
     users.push(newUser);
     localStorage.setItem('sel_users', JSON.stringify(users));
     return newUser;
@@ -50,7 +42,6 @@ export const createUser = async (name: string, avatar: string, grade: string, ge
 
 export const submitResponse = async (userId: number, questionId: number, score: number) => {
   try {
-    // Very short timeout for responses to ensure UI stays snappy
     const res = await fetchWithTimeout(`${API_URL}/response`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -60,7 +51,6 @@ export const submitResponse = async (userId: number, questionId: number, score: 
     if (!res.ok) throw new Error('Failed to submit response');
     return res.json();
   } catch (error) {
-    // Silent fallback
     const responses = JSON.parse(localStorage.getItem('sel_responses') || '[]');
     responses.push({
       id: Date.now(),
@@ -74,7 +64,6 @@ export const submitResponse = async (userId: number, questionId: number, score: 
   }
 };
 
-// Returns an object containing the data and the source (DB or LOCAL)
 export const fetchAllResponses = async () => {
   try {
     const res = await fetchWithTimeout(`${API_URL}/admin/responses`, {}, 2000);
@@ -86,7 +75,6 @@ export const fetchAllResponses = async () => {
     const users: User[] = JSON.parse(localStorage.getItem('sel_users') || '[]');
     const responses: any[] = JSON.parse(localStorage.getItem('sel_responses') || '[]');
     
-    // Simulate SQL Join: responses JOIN users ON user_id
     const joined = responses.map(r => {
       const user = users.find(u => u.id === r.user_id);
       return {
@@ -101,7 +89,6 @@ export const fetchAllResponses = async () => {
       };
     });
 
-    // Sort by timestamp desc
     const sorted = joined.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     return { source: 'LOCAL', data: sorted };
   }

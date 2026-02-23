@@ -23,8 +23,14 @@ const ProfileSelector: React.FC<Props> = ({ onUserCreated }) => {
   useEffect(() => {
     if (QUESTIONS.length > 0) {
         const img = new Image();
-        // Use path exactly as defined in constants
-        img.src = QUESTIONS[0].image_filename;
+        const src = QUESTIONS[0].image_filename;
+        if (/^https?:\/\//.test(src)) {
+            img.src = src;
+        } else {
+            const baseUrl = import.meta.env.BASE_URL || '/';
+            const cleanSrc = src.replace(/^(\.?\/)+/, '');
+            img.src = baseUrl.endsWith('/') ? `${baseUrl}${cleanSrc}` : `${baseUrl}/${cleanSrc}`;
+        }
     }
   }, []);
 

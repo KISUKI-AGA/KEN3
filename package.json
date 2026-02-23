@@ -1,10 +1,10 @@
 {
-  "name": "sel-interactive-questionnaire2/19",
+  "name": "sel-interactive-questionnaire",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"vite\" \"node server.js\"",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
@@ -23,6 +23,7 @@
   "devDependencies": {
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "concurrently": "^8.2.2",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }

@@ -101,32 +101,54 @@ const AdminPanel: React.FC = () => {
 
     const allQuestionIds = QUESTIONS.map(q => q.id).sort((a, b) => a - b);
     
+    // Helper to escape CSV fields
+    const escapeCsvField = (field: any): string => {
+      if (field === null || field === undefined) return '';
+      const stringField = String(field);
+      // If contains comma, double quote, or newline, wrap in quotes and escape internal quotes
+      if (/[",\n\r]/.test(stringField)) {
+        return `"${stringField.replace(/"/g, '""')}"`;
+      }
+      return stringField;
+    };
+
     // Header
-    let csvContent = "User ID,Name,Grade,Gender,Last Active Time";
-    allQuestionIds.forEach(id => csvContent += `,Q${id}`);
-    csvContent += ",Total Score,Progress\n";
+    const headers = [
+      "User ID", "Name", "Grade", "Gender", "Last Active Time",
+      ...allQuestionIds.map(id => `Q${id}`),
+      "Total Score", "Progress"
+    ];
 
     // Rows
-    studentSummaries.forEach(s => {
-      let rowString = `${s.user_id},${s.name},${s.grade},${s.gender},${s.last_timestamp}`;
+    const rows = studentSummaries.map(s => {
       let totalScore = 0;
       
-      allQuestionIds.forEach(qid => {
+      const scores = allQuestionIds.map(qid => {
         const score = s.answers.get(qid);
         if (score !== undefined) {
-          rowString += `,${score}`;
           totalScore += score;
-        } else {
-          rowString += `,`;
+          return score;
         }
+        return '';
       });
 
       const progress = `${s.answers.size}/${QUESTIONS.length}`;
-      rowString += `,${totalScore},${progress}\n`;
-      csvContent += rowString;
+      
+      return [
+        s.user_id,
+        s.name,
+        s.grade,
+        s.gender,
+        s.last_timestamp,
+        ...scores,
+        totalScore,
+        progress
+      ].map(escapeCsvField).join(',');
     });
 
-    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const csvContent = "\uFEFF" + [headers.join(','), ...rows].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -134,6 +156,7 @@ const AdminPanel: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleClearLocal = () => {
@@ -257,6 +280,15 @@ const AdminPanel: React.FC = () => {
                             {/* Avatar & Name */}
                             <div className="col-span-4 flex items-center gap-4 pl-4">
                                 <div className="text-4xl">{student.avatar}</div>
+                                {(student.avatar.startsWith('http') || student.avatar.startsWith('/') || student.avatar.startsWith('data:')) ? (
+                                    <img 
+                                        src={student.avatar} 
+                                        alt={student.name} 
+                                        className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                                    />
+                                ) : (
+                                    <div className="text-4xl">{student.avatar}</div>
+                                )}
                                 <div className="font-bold text-gray-700 text-lg">{student.name}</div>
                             </div>
 

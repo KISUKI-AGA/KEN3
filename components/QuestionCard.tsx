@@ -16,6 +16,12 @@ const QuestionCard: React.FC<Props> = ({ question, userId, onNext, progress, tot
   const [selectedScore, setSelectedScore] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const resolveImageSrc = (src: string) => {
+    if (/^https?:\/\//.test(src)) return src;
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    const cleanSrc = src.replace(/^(\.?\/)+/, '');
+    return baseUrl.endsWith('/') ? `${baseUrl}${cleanSrc}` : `${baseUrl}/${cleanSrc}`;
+  };
 
   // Preload next image for smoother transitions
   useEffect(() => {
@@ -26,7 +32,7 @@ const QuestionCard: React.FC<Props> = ({ question, userId, onNext, progress, tot
       if (nextQuestion) {
         const img = new Image();
         // Use path exactly as defined in constants
-        img.src = nextQuestion.image_filename;
+        img.src = resolveImageSrc(nextQuestion.image_filename);
       }
     }
   }, [progress, total]);
@@ -116,7 +122,7 @@ const QuestionCard: React.FC<Props> = ({ question, userId, onNext, progress, tot
           {!imgError ? (
             <img 
               // Use path exactly as defined in constants
-              src={question.image_filename} 
+              src={resolveImageSrc(question.image_filename)} 
               alt="Question illustration" 
               className="w-full h-full object-contain hover:scale-105 transition-transform duration-700"
               onError={() => setImgError(true)}
