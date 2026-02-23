@@ -16,7 +16,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const PORT = 3001;
+// 修改為支援雲端動態分配 Port
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
@@ -119,5 +120,5 @@ app.get('/api/admin/responses', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
